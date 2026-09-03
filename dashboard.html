@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>파주 AI-ROAD 교사 대시보드</title>
+<style>
+  :root{
+    --indigo:#5b4fe9; --indigo-d:#4a3fd0; --indigo-l:#efeefc;
+    --ink:#1f2233; --muted:#6b7280; --line:#eceaf6; --bg:#f4f5fb; --card:#fff;
+    --green:#2aa876; --orange:#f0932b;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;line-height:1.5;}
+  header{background:linear-gradient(135deg,#6d5cf0,#5b4fe9);color:#fff;padding:20px 22px;}
+  header h1{margin:0;font-size:20px;font-weight:900;letter-spacing:-.4px;}
+  header p{margin:4px 0 0;font-size:13px;opacity:.9;}
+  .wrap{max-width:1000px;margin:0 auto;padding:20px 16px 60px;}
+
+  /* 로그인 게이트 */
+  .gate{max-width:360px;margin:70px auto;background:var(--card);border:1px solid var(--line);
+    border-radius:18px;padding:28px 24px;text-align:center;box-shadow:0 10px 34px rgba(40,30,90,.08);}
+  .gate h2{margin:0 0 6px;font-size:18px;}
+  .gate p{margin:0 0 16px;font-size:13px;color:var(--muted);}
+  .gate input{width:100%;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:16px;letter-spacing:.3em;text-align:center;}
+  .gate input:focus{outline:none;border-color:var(--indigo);box-shadow:0 0 0 3px var(--indigo-l);}
+  .gate button{margin-top:12px;width:100%;background:var(--indigo);color:#fff;border:none;border-radius:10px;padding:12px;font-size:15px;font-weight:700;cursor:pointer;}
+
+  .toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+  .toolbar .stat{font-size:13px;color:var(--muted);}
+  .toolbar .stat b{color:var(--ink);}
+  .btn{border:none;border-radius:10px;padding:9px 15px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;text-decoration:none;display:inline-block;}
+  .btn.indigo{background:var(--indigo);} .btn.gray{background:#8a8698;}
+
+  details.day{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:12px;overflow:hidden;}
+  details.day>summary{cursor:pointer;list-style:none;padding:14px 18px;font-weight:800;font-size:16px;color:var(--indigo);background:#faf9ff;}
+  details.day>summary::-webkit-details-marker{display:none}
+  details.day>summary::before{content:"▸ ";}
+  details.day[open]>summary::before{content:"▾ ";}
+
+  details.school{margin:0 12px 10px;border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+  details.school>summary{cursor:pointer;list-style:none;padding:11px 16px;font-weight:700;font-size:14.5px;background:#fff;color:var(--ink);}
+  details.school>summary::-webkit-details-marker{display:none}
+  details.school>summary::before{content:"🏫 ";}
+
+  details.cls{margin:8px 12px;border:1px dashed var(--line);border-radius:10px;overflow:hidden;}
+  details.cls>summary{cursor:pointer;list-style:none;padding:10px 14px;font-weight:700;font-size:13.5px;background:#f7f6fc;color:var(--indigo-d);}
+  details.cls>summary::-webkit-details-marker{display:none}
+  details.cls>summary::before{content:"";}
+
+  .clsbody{padding:12px 14px;}
+  .grp{margin-bottom:14px;}
+  .grp h4{margin:0 0 8px;font-size:13px;color:var(--muted);font-weight:700;}
+  .notes{display:flex;flex-wrap:wrap;gap:8px;}
+  .note{background:#fff3b0;border-radius:6px;padding:8px 10px;font-size:12.5px;max-width:220px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+  .apps{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;}
+  .appcard{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff;}
+  .appcard .at{font-weight:700;font-size:14px;margin-bottom:2px;}
+  .appcard .an{font-size:12px;color:var(--muted);margin-bottom:8px;}
+  .appcard .badge{display:inline-block;font-size:10px;font-weight:700;padding:1px 7px;border-radius:8px;margin-left:6px;vertical-align:middle;}
+  .appcard .badge.link{background:#e6f0ff;color:#2f6fed;}
+  .appcard .badge.code{background:#fde6d6;color:#b56b1a;}
+  .appcard a.open,.appcard button.open{display:inline-block;background:var(--indigo);color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:13px;font-weight:700;text-decoration:none;cursor:pointer;}
+  .empty{color:#b3b0c0;font-size:12.5px;font-style:italic;}
+
+  .modal{position:fixed;inset:0;z-index:9999;background:rgba(20,18,40,.9);display:flex;flex-direction:column;padding:18px;}
+  .modal .bar{display:flex;justify-content:space-between;align-items:center;color:#fff;margin-bottom:10px;}
+  .modal .bar b{font-size:15px;}
+  .modal .bar button{background:rgba(255,255,255,.2);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:14px;cursor:pointer;}
+  .modal iframe{flex:1;width:100%;border:none;border-radius:12px;background:#fff;}
+  .loading{text-align:center;color:var(--muted);padding:40px;font-size:14px;}
+</style>
+</head>
+<body>
+<header>
+  <h1>📊 파주 AI-ROAD 교사 대시보드</h1>
+  <p>날짜 → 학교 → 반 순으로 학생들의 의견과 제출 앱을 모아봅니다.</p>
+</header>
+
+<div class="wrap">
+  <div id="gate" class="gate">
+    <h2>🔒 교사 전용</h2>
+    <p>비밀번호를 입력하세요.</p>
+    <input type="password" id="pin" inputmode="numeric" maxlength="8" placeholder="비밀번호">
+    <button id="pinBtn">확인</button>
+  </div>
+
+  <div id="app" hidden>
+    <div class="toolbar">
+      <button class="btn indigo" id="refresh">🔄 새로고침</button>
+      <span class="stat">포스트잇 <b id="cCount">0</b>개 · 제출 앱 <b id="aCount">0</b>개</span>
+    </div>
+    <div id="tree"><div class="loading">불러오는 중…</div></div>
+  </div>
+</div>
+
+<div id="modal" class="modal" hidden>
+  <div class="bar"><b id="modalTitle">앱 미리보기</b><button id="modalClose">✕ 닫기</button></div>
+  <iframe id="modalFrame" sandbox="allow-scripts allow-popups allow-pointer-lock allow-modals"></iframe>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const SB_URL = "https://bklnkahbuglnrxpohgmm.supabase.co";
+const SB_ANON_KEY = "sb_publishable_iNyZyK0aRV0AeaFe6u2RFw_D2IiE-QP";
+const DASH_PIN = "2026";
+
+let sb=null;
+try{ if(window.supabase){ sb=window.supabase.createClient(SB_URL,SB_ANON_KEY); } }catch(e){}
+
+/* 로그인 게이트 */
+(function(){
+  const gate=document.getElementById('gate'), app=document.getElementById('app');
+  const pin=document.getElementById('pin'), btn=document.getElementById('pinBtn');
+  function go(){ if((pin.value||'').trim()===DASH_PIN){ gate.hidden=true; app.hidden=false; load(); startLive(); } else { alert('비밀번호가 올바르지 않습니다.'); pin.value=''; pin.focus(); } }
+  btn.onclick=go;
+  pin.addEventListener('keydown',e=>{ if(e.key==='Enter') go(); });
+  pin.focus();
+})();
+
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const CODE_STORE={};   // 미리보기용 코드 보관
+
+/* 실시간 자동 반영: 학생이 새 글/앱을 올리면 대시보드가 스스로 새로고침 */
+let _liveOn=false, _reloadTimer=null;
+function scheduleReload(){ clearTimeout(_reloadTimer); _reloadTimer=setTimeout(load,800); }
+function startLive(){
+  if(_liveOn||!sb) return; _liveOn=true;
+  try{
+    sb.channel('dash-comments').on('postgres_changes',{event:'*',schema:'public',table:'comments'},scheduleReload).subscribe();
+    sb.channel('dash-apps').on('postgres_changes',{event:'*',schema:'public',table:'apps'},scheduleReload).subscribe();
+  }catch(e){}
+}
+
+async function load(){
+  const tree=document.getElementById('tree');
+  if(!sb){ tree.innerHTML='<div class="loading">Supabase 연결이 필요합니다.</div>'; return; }
+  tree.innerHTML='<div class="loading">불러오는 중…</div>';
+  const [c,a]=await Promise.all([
+    sb.from('comments').select('board,text,school,class_date,grade,class_name,created_at').in('board',['board1','board2']).order('created_at',{ascending:true}),
+    sb.from('apps').select('*').order('created_at',{ascending:true})
+  ]);
+  if(c.error){ tree.innerHTML='<div class="loading">불러오기 실패: '+esc(c.error.message)+'</div>'; return; }
+  const comments=c.data||[], apps=(a&&a.data)||[];
+  document.getElementById('cCount').textContent=comments.length;
+  document.getElementById('aCount').textContent=apps.length;
+  render(comments, apps);
+}
+
+function keyOf(r){
+  const grade=(r.grade||'').trim(), cls=(r.class_name||'').trim();
+  const c=[grade,cls].filter(Boolean).join(' ')||'(반 없음)';
+  return {
+    d:(r.class_date||'').trim()||'(날짜 없음)',
+    s:(r.school||'').trim()||'(학교 없음)',
+    c:c
+  };
+}
+
+function render(comments, apps){
+  const tree=document.getElementById('tree');
+  // 중첩 구조: date -> school -> class -> {board1:[], board2:[], apps:[]}
+  const map={};
+  function slot(k){
+    map[k.d]=map[k.d]||{};
+    map[k.d][k.s]=map[k.d][k.s]||{};
+    map[k.d][k.s][k.c]=map[k.d][k.s][k.c]||{board1:[],board2:[],apps:[]};
+    return map[k.d][k.s][k.c];
+  }
+  comments.forEach(r=>{ const g=slot(keyOf(r)); (g[r.board]||g.board1).push(r.text||''); });
+  apps.forEach(r=>{ slot(keyOf(r)).apps.push(r); });
+
+  const dates=Object.keys(map).sort((a,b)=>b.localeCompare(a)); // 최신 날짜 먼저
+  if(!dates.length){ tree.innerHTML='<div class="loading">아직 저장된 내용이 없어요.</div>'; return; }
+
+  let html='';
+  let codeIdx=0;
+  for(const d of dates){
+    const schools=Object.keys(map[d]).sort();
+    let dTotal=0; schools.forEach(s=>Object.keys(map[d][s]).forEach(c=>{const g=map[d][s][c];dTotal+=g.board1.length+g.board2.length+g.apps.length;}));
+    html+='<details class="day" open><summary>'+esc(d)+' <span style="font-weight:600;font-size:12px;color:#6b7280;">('+dTotal+'건)</span></summary>';
+    for(const s of schools){
+      html+='<details class="school" open><summary>'+esc(s)+'</summary>';
+      const classes=Object.keys(map[d][s]).sort();
+      for(const c of classes){
+        const g=map[d][s][c];
+        html+='<details class="cls" open><summary class="cls-sum">🧑‍🏫 '+esc(c)+' <span style="font-weight:600;font-size:11px;color:#6b7280;">(의견 '+(g.board1.length+g.board2.length)+' · 앱 '+g.apps.length+')</span></summary><div class="clsbody">';
+        // board1
+        html+='<div class="grp"><h4>💬 AI 하면 떠오르는 것 (1번)</h4>';
+        html+= g.board1.length ? '<div class="notes">'+g.board1.map(t=>'<div class="note">'+esc(t)+'</div>').join('')+'</div>' : '<div class="empty">없음</div>';
+        html+='</div>';
+        // board2
+        html+='<div class="grp"><h4>💡 생활 문제 & 해결 아이디어 (6번)</h4>';
+        html+= g.board2.length ? '<div class="notes">'+g.board2.map(t=>'<div class="note" style="background:#cfe8ff">'+esc(t)+'</div>').join('')+'</div>' : '<div class="empty">없음</div>';
+        html+='</div>';
+        // apps
+        html+='<div class="grp"><h4>🚀 제출한 앱</h4>';
+        if(g.apps.length){
+          html+='<div class="apps">';
+          for(const ap of g.apps){
+            const isCode=(ap.type==='code'&&ap.code);
+            html+='<div class="appcard"><div class="at">'+esc(ap.title||'(제목 없음)')+'<span class="badge '+(isCode?'code':'link')+'">'+(isCode?'코드':'링크')+'</span></div>';
+            html+='<div class="an">'+(ap.nickname?esc(ap.nickname):'익명')+'</div>';
+            if(isCode){
+              const id='code'+(codeIdx++); CODE_STORE[id]=ap.code;
+              html+='<button class="open" data-code="'+id+'" data-title="'+esc(ap.title||'')+'">▶ 미리보기</button>';
+            } else if(ap.url){
+              html+='<a class="open" href="'+esc(ap.url)+'" target="_blank" rel="noopener">↗ 열기</a>';
+            } else {
+              html+='<span class="empty">내용 없음</span>';
+            }
+            html+='</div>';
+          }
+          html+='</div>';
+        } else { html+='<div class="empty">없음</div>'; }
+        html+='</div>';
+        html+='</div></details>'; // clsbody, cls
+      }
+      html+='</details>'; // school
+    }
+    html+='</details>'; // day
+  }
+  tree.innerHTML=html;
+}
+
+/* 코드 미리보기 모달 */
+(function(){
+  const modal=document.getElementById('modal'), frame=document.getElementById('modalFrame'), mt=document.getElementById('modalTitle');
+  document.getElementById('tree').addEventListener('click',e=>{
+    const b=e.target.closest('[data-code]'); if(!b) return;
+    const code=CODE_STORE[b.getAttribute('data-code')]||'';
+    mt.textContent=b.getAttribute('data-title')||'앱 미리보기';
+    frame.srcdoc=code; modal.hidden=false;
+  });
+  document.getElementById('modalClose').onclick=()=>{ modal.hidden=true; frame.srcdoc=''; };
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&!modal.hidden){ modal.hidden=true; frame.srcdoc=''; } });
+})();
+
+document.getElementById('refresh').onclick=load;
+</script>
+</body>
+</html>
